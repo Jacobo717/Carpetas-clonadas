@@ -245,16 +245,24 @@ with derecha:
 
 abajo_izq, abajo_der = st.columns(2)
 with abajo_izq:
-    st.subheader("Qué tan movido estuvo cada año")
-    principal["Variacion"] = principal["Valor"].pct_change() * 100
-    porAnio = principal.dropna(subset=["Variacion"])
+    st.subheader("Volatilidad móvil de los cambios diarios")
+    variacion_diaria = principal["Valor"].pct_change() * 100
+    volatilidad = (
+        variacion_diaria.rolling(window=30, min_periods=30).std().dropna()
+    )
 
-    fig, ax = plt.subplots(figsize=(6, 3.4))
-    sns.boxplot(data=porAnio, x="Anio", y="Variacion", color=GRIS, ax=ax)
-    ax.axhline(0, color=ROJO, linewidth=1, linestyle="--")
-    ax.set_xlabel("Año")
-    ax.set_ylabel("Variación diaria (%)")
-    st.pyplot(fig)
+    if volatilidad.empty:
+        st.info("Se necesitan al menos 31 observaciones para calcular la "
+                "volatilidad de 30 cambios diarios.")
+    else:
+        fig, ax = plt.subplots(figsize=(6, 3.4))
+        ax.plot(principal.loc[volatilidad.index, "Fecha"], volatilidad,
+                color=AZUL, linewidth=1.8)
+        ax.set_xlabel("Fecha")
+        ax.set_ylabel("Desviación estándar diaria (%)")
+        st.pyplot(fig)
+        st.caption("Cada punto resume 30 cambios diarios observados. Un valor "
+                   "más alto indica mayor fluctuación, no su dirección.")
 
 with abajo_der:
     st.subheader("Promedio por mes y año")
